@@ -53,6 +53,7 @@ portal-academico-mfa/
 │   └── (opcional, pero como nose guardaron scripts o backups se dejo vacio)
 │
 ├── docs/
+├── venv/
 ├── requirements.txt
 ├── .env              
 └── README.md

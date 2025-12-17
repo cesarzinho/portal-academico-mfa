@@ -1,0 +1,127 @@
+
+---
+
+## `docs/pruebas.md`
+```md
+# Pruebas realizadas
+
+## Objetivo
+Validar que el sistema MFA cumpla:
+- Autenticación correcta con 3 factores
+- Manejo de errores (código incorrecto, expirado, reenvío)
+- Bloqueo por exceso de intentos
+- Integración real (SMTP y Twilio)
+
+---
+
+## Casos de prueba
+
+### Caso 1: Registro exitoso
+**Entrada**
+- username válido
+- email válido
+- phone válido
+- password
+
+**Resultado esperado**
+- Usuario creado en `users`
+- Redirección a login
+
+---
+
+### Caso 2: Login con contraseña correcta
+**Entrada**
+- username + password correctos
+
+**Resultado esperado**
+- Se crea `login_flow` con `PENDING_EMAIL`
+- Se genera OTP email y se envía por correo
+- Redirige a `/verify-email`
+
+---
+
+### Caso 3: OTP Email correcto
+**Entrada**
+- código email correcto
+
+**Resultado esperado**
+- OTP marcado como consumido
+- `login_flow.stage` pasa a `PENDING_SMS`
+- se genera OTP SMS y se envía
+- redirige a `/verify-sms`
+
+---
+
+### Caso 4: OTP Email incorrecto
+**Entrada**
+- código email incorrecto
+
+**Resultado esperado**
+- Mensaje “Código incorrecto”
+- attempts aumenta en DB
+- permanece en verify email
+
+---
+
+### Caso 5: OTP Email expirado
+**Entrada**
+- código ya expirado
+
+**Resultado esperado**
+- Mensaje “expiró”
+- no permite validar
+- se usa botón “Reenviar”
+
+---
+
+### Caso 6: Reenviar OTP Email
+**Entrada**
+- clic en “Reenviar código”
+
+**Resultado esperado**
+- se crea un nuevo challenge para email
+- llega nuevo correo
+- el OTP anterior queda obsoleto
+
+---
+
+### Caso 7: OTP SMS correcto
+**Entrada**
+- código sms correcto
+
+**Resultado esperado**
+- `login_flow.stage = AUTHENTICATED`
+- sesión activa
+- redirección a `/dashboard`
+
+---
+
+### Caso 8: OTP SMS incorrecto + bloqueo por intentos
+**Entrada**
+- 5 intentos fallidos (o max_attempts)
+
+**Resultado esperado**
+- se bloquea el challenge
+- se solicita iniciar sesión nuevamente
+- no permite seguir intentando
+
+---
+
+### Caso 9: Integración Twilio
+**Validación**
+- Envío real con Twilio
+- Geo permissions habilitado
+- Número en formato E.164
+
+**Resultado esperado**
+- SMS recibido correctamente
+
+---
+
+## Evidencias
+Incluyo capturas o video mostrando:
+- Registro
+- Login
+- Email OTP recibido
+- SMS OTP recibido
+- Dashboard final (verificación completada)

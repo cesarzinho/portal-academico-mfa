@@ -1,0 +1,94 @@
+# Diseño de base de datos (PostgreSQL)
+
+## Objetivo
+La base de datos guarda:
+- Usuarios registrados
+- Proceso de autenticación por etapas (MFA)
+- OTPs (como hash) con control de expiración e intentos
+
+---
+
+## Tablas
+
+## 1) users
+Guarda información del usuario.
+
+Campos principales:
+- `id`: PK autoincremental
+- `username`: único
+- `email`: único
+- `phone`: único (ideal E.164)
+- `password_hash`: hash bcrypt
+- `is_active`: control de usuario activo
+- `created_at`: fecha de registro
+
+---
+
+## 2) login_flows
+Representa un “intento de login” y su etapa MFA.
+
+Campos:
+- `id`: UUID (PK)
+- `user_id`: FK a `users`
+- `stage`: etapa actual del MFA
+- `expires_at`: expiración general del flujo
+- `created_at`, `updated_at`
+
+Estados usados:
+- `PENDING_EMAIL`
+- `PENDING_SMS`
+- `AUTHENTICATED`
+- `CANCELLED`
+
+---
+
+## 3) otp_challenges
+Guarda cada OTP generado (por canal).
+
+Campos:
+- `id`: UUID (PK)
+- `flow_id`: FK a `login_flows`
+- `channel`: `email` o `sms`
+- `code_hash`: hash del OTP (nunca guardo OTP en texto plano)
+- `expires_at`: expiración del OTP
+- `attempts`: intentos usados
+- `max_attempts`: límite (por defecto 5)
+- `consumed_at`: fecha/hora si ya fue usado
+- `created_at`
+
+---
+
+## Script SQL (resumen)
+```sql
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE TABLE IF NOT EXISTS users (
+  id BIGSERIAL PRIMARY KEY,
+  username VARCHAR(50) UNIQUE NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  phone VARCHAR(30) UNIQUE,
+  password_hash TEXT NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS login_flows (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  stage VARCHAR(20) NOT NULL CHECK (stage IN ('PENDING_EMAIL','PENDING_SMS','AUTHENTICATED','CANCELLED')),
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS otp_challenges (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  flow_id UUID NOT NULL REFERENCES login_flows(id) ON DELETE CASCADE,
+  channel VARCHAR(10) NOT NULL CHECK (channel IN ('email','sms')),
+  code_hash TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  attempts INT NOT NULL DEFAULT 0,
+  max_attempts INT NOT NULL DEFAULT 5,
+  consumed_at TIMESTAMPTZ NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

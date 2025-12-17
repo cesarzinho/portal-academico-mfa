@@ -1,0 +1,52 @@
+# Consideraciones de seguridad
+
+## Objetivo
+Este proyecto busca aumentar la seguridad del acceso al sistema académico mediante MFA real y controles mínimos anti-abuso.
+
+---
+
+## Medidas implementadas
+
+### 1) Contraseñas hasheadas (bcrypt)
+- No guardo contraseñas en texto plano.
+- Uso bcrypt para comparar hashes de forma segura.
+
+### 2) OTP hasheado
+- El OTP nunca se guarda como texto.
+- Se guarda como `code_hash` y se verifica con `bcrypt.checkpw`.
+
+### 3) Expiración del OTP (TTL)
+- Cada OTP tiene `expires_at` (por ejemplo 5 minutos).
+- Si expira, se obliga a reenviar.
+
+### 4) Límite de intentos
+- Cada challenge guarda `attempts` y `max_attempts` (por defecto 5).
+- Si supera el límite, no permite más intentos y se solicita iniciar sesión de nuevo.
+
+### 5) OTP de un solo uso
+- Al validar correctamente, el OTP se marca con `consumed_at`.
+- Un OTP consumido no puede ser reutilizado.
+
+### 6) Reenvío controlado
+- Existe botón “Reenviar código” para email y SMS.
+- Cada reenvío crea un nuevo challenge, por lo que solo se valida el más reciente.
+
+### 7) Formato seguro de teléfonos
+- Al enviar SMS, normalizo el número a E.164 agregando `+` si falta.
+- Evita errores de envío y reduce fallas por formato.
+
+---
+
+## Riesgos y mejoras futuras
+- Rate limiting adicional (por IP / usuario) para frenar ataques de fuerza bruta.
+- Invalidar/cancelar el `login_flow` al bloquear OTP (stage `CANCELLED`).
+- Registrar logs de seguridad (intentos fallidos, reenvíos excesivos).
+- Usar HTTPS en despliegue real (para proteger cookies/sesión).
+- Agregar CSRF protection (Flask-WTF) si se escala el proyecto.
+
+---
+
+## Buenas prácticas de configuración
+- `.env` no se sube a Git.
+- Tokens (Twilio, SMTP) se mantienen privados.
+- App Password de Gmail es obligatoria (no usar contraseña normal).

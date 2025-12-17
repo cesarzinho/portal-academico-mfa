@@ -1,0 +1,111 @@
+
+---
+
+## `docs/flujo-mfa.md`
+```md
+# Flujo de autenticación MFA (3 factores)
+
+## Resumen del flujo
+El login se realiza en 3 pasos:
+
+1) **Usuario + contraseña**
+2) **OTP enviado al correo**
+3) **OTP enviado por SMS**
+4) Acceso permitido al **dashboard**
+
+---
+
+## Paso a paso
+
+### 1) Registro
+Ruta: `/register`
+
+- El usuario crea cuenta con:
+  - `username`
+  - `email`
+  - `phone`
+  - `password`
+- La contraseña se guarda como **hash** (bcrypt).
+
+Resultado:
+- Se crea un registro en `users`.
+
+---
+
+### 2) Login (factor 1)
+Ruta: `/login`
+
+- El usuario ingresa `username` y `password`.
+- Si la contraseña es correcta:
+  - Creo un `login_flow` con estado `PENDING_EMAIL`.
+  - Genero un OTP de email (6 dígitos).
+  - Lo guardo como hash en `otp_challenges` con `channel='email'`.
+  - Envío el OTP al correo por SMTP.
+
+Resultado:
+- El usuario pasa a `/verify-email`.
+
+---
+
+### 3) Verificación por Email (factor 2)
+Ruta: `/verify-email`
+
+- El usuario escribe el código.
+- Verifico:
+  - si existe
+  - si no expiró
+  - si no fue consumido
+  - si no superó intentos máximos
+- Si es correcto:
+  - Marco el OTP como consumido.
+  - Actualizo el `login_flow.stage` a `PENDING_SMS`.
+  - Genero OTP SMS, lo guardo y lo envío por Twilio.
+
+Resultado:
+- El usuario pasa a `/verify-sms`.
+
+#### Reenviar email
+Ruta: `/resend-email` (POST)
+
+- Genero un nuevo OTP email
+- Lo guardo como nuevo challenge
+- Lo envío por correo
+
+---
+
+### 4) Verificación por SMS (factor 3)
+Ruta: `/verify-sms`
+
+- El usuario escribe el código SMS.
+- Valido con las mismas reglas (expiración, intentos, consumido).
+- Si es correcto:
+  - Actualizo `login_flow.stage` a `AUTHENTICATED`.
+  - Activo sesión: `session["authed"] = True`.
+
+Resultado:
+- El usuario entra al `/dashboard`.
+
+#### Reenviar SMS
+Ruta: `/resend-sms` (POST)
+
+- Genero un nuevo OTP SMS
+- Lo guardo como nuevo challenge
+- Lo envío por SMS
+
+---
+
+## Manejo de errores
+- Si el OTP es incorrecto:
+  - se suma intento.
+- Si supera `max_attempts`:
+  - se bloquea y se obliga a iniciar sesión de nuevo.
+- Si expira:
+  - se solicita reenviar código.
+
+---
+
+## Estados del flujo
+- `PENDING_EMAIL`: esperando OTP de correo
+- `PENDING_SMS`: esperando OTP por SMS
+- `AUTHENTICATED`: MFA completo
+- `CANCELLED`: estado disponible para cancelar flujos (si se decide cortar el login)

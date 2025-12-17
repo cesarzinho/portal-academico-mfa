@@ -1,0 +1,46 @@
+# Arquitectura del sistema
+
+## Objetivo
+El objetivo de este proyecto es implementar un portal académico con autenticación **MFA de 3 factores**:
+1) Contraseña  
+2) OTP por correo  
+3) OTP por SMS  
+
+Todo el sistema está implementado como una aplicación web en **Flask**, usando **PostgreSQL** como base de datos.
+
+---
+
+## Componentes principales
+
+### 1) Aplicación Web (Flask)
+- Maneja las rutas de:
+  - Registro
+  - Login
+  - Verificación por Email
+  - Verificación por SMS
+  - Reenvío de códigos
+  - Home/Dashboard
+- Renderiza vistas HTML con Jinja (`templates/`).
+
+Archivos clave:
+- `src/app.py`: configuración principal de Flask, rutas generales.
+- `src/auth.py`: rutas y flujo MFA.
+
+### 2) Servicios
+- `src/services/otp_service.py`
+  - Genera OTP (6 dígitos).
+  - Guarda el OTP como **hash**, no como texto plano.
+  - Valida OTP por canal (`email`/`sms`), con expiración y límite de intentos.
+- `src/services/email_service.py`
+  - Envía el OTP por correo usando SMTP (Gmail App Password).
+  - Envia el correo en HTML con diseño.
+- `src/services/sms_service.py`
+  - Envía el OTP por SMS usando Twilio.
+  - Normaliza el teléfono al formato E.164 (agrega `+` si hace falta).
+
+### 3) Base de datos (PostgreSQL)
+Se guardan:
+- Usuarios
+- Flujos de login (etapas de MFA)
+- Challenges/OTPs generados (hash, expiración, intentos)
+
