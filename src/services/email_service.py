@@ -15,7 +15,7 @@ def send_email_otp(to_email: str, otp_code: str) -> None:
         raise RuntimeError("Faltan SMTP_USER / SMTP_PASS en .env")
 
     msg = EmailMessage()
-    msg["Subject"] = f"🔐 Tu código de verificación – {BRAND_NAME}"
+    msg["Subject"] = f" Tu código de verificación – {BRAND_NAME}"
     msg["From"] = f"{BRAND_NAME} <{user}>"
     msg["To"] = to_email
 
