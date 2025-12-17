@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Verificación por correo</h2>
+<small>Te enviamos un código al email. Expira en 5 minutos.</small>
+
+<form method="post" action="/verify-email">
+  <label>Código</label>
+  <input name="code" inputmode="numeric" placeholder="123456" required>
+
+  <div class="row">
+    <button class="btn" type="submit">Verificar</button>
+  </div>
+</form>
+
+<form method="post" action="/resend-email">
+  <div class="row">
+    <button class="btn secondary" type="submit">Reenviar código</button>
+  </div>
+</form>
+{% endblock %}

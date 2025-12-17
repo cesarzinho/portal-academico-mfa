@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% set page_class = "flip-enabled" %}
+{% block content %}
+
+
+<h2>Crear cuenta</h2>
+
+<form class="flip-link" method="post">
+  <label>Usuario</label>
+  <input name="username" required>
+
+  <label>Email</label>
+  <input name="email" type="email" required>
+
+  <label>Teléfono (recomendado E.164)</label>
+  <input name="phone" placeholder="+57XXXXXXXXXX" required>
+
+  <label>Contraseña</label>
+  <input name="password" type="password" required>
+
+  <div class="row">
+    <button class="btn success" type="submit">Registrar</button>
+    <a class="btn secondary" href="/login" style="text-align:center;line-height:38px;">Volver</a>
+  </div>
+</form>
+
+{% endblock %}

@@ -1,218 +1,162 @@
-\# Portal Académico con Autenticación MFA
+*Portal Académico con Autenticación MFA (Password + Email OTP + SMS OTP)
+Descripción general*
 
+Este proyecto es un portal académico que implementa un flujo de autenticación con 3 factores (MFA):
 
+1. Contraseña
 
-\## Descripción general
+2. ódigo OTP por correo
 
+3. Código OTP por SMS
 
+El objetivo es aumentar la seguridad del inicio de sesión usando OTP con expiración, hash del código, límite de intentos, y opción de reenviar código.
 
-Este proyecto es un \*\*portal académico\*\* que implementa un sistema de autenticación con
+- Tecnologías principales
 
-\*\*Multi-Factor Authentication (MFA)\*\* utilizando códigos OTP (One-Time Password).
+- Python 3.x
 
-El objetivo es proporcionar un flujo de inicio de sesión más seguro para usuarios
+- Flask
 
-del sistema académico.
+- PostgreSQL (pgAdmin)
 
+- SMTP (Gmail App Password) para envío de correo
 
+- Twilio para envío de SMS
 
-El backend está desarrollado con \*\*Flask (Python)\*\* y utiliza \*\*SQLite\*\* como base de datos
-
-ligera para desarrollo.
-
-
-
----
-
-
-
-\## Tecnologías principales
-
-
-
-\- Python 3.x
-
-\- Flask
-
-\- SQLite
-
-\- HTML5, CSS3, JavaScript
-
-\- (Opcional) Librerías para envío de correos / generación de OTP
-
-
-
----
-
-
-
-\## Estructura del proyecto
-
-
-
-```text
+- HTML + CSS + JS (UI moderna + animación flip en login/register)
 
 portal-academico-mfa/
-
 ├── src/
-
-│   ├── models/        # Modelos de datos (Usuario, Sesión, etc.)
-
-│   ├── controllers/   # Controladores / lógica de rutas
-
-│   ├── services/      # Servicios (OTP, email, seguridad)
-
-│   └── utils/         # Utilidades y validadores
-
+│   ├── app.py
+│   ├── auth.py
+│   ├── db.py
+│   └── services/
+│       ├── otp_service.py
+│       ├── email_service.py
+│       └── sms_service.py
 │
-
 ├── static/
-
-│   ├── css/           # Estilos CSS
-
-│   ├── js/            # Lógica JS del frontend
-
-│   └── img/           # Imágenes estáticas
-
+│   ├── css/
+│   │   └── styles.css
+│   └── js/
+│       └── flip.js
 │
-
-├── templates/         # Vistas HTML (login, verify\_otp, dashboard, etc.)
-
+├── templates/
+│   ├── base.html
+│   ├── login.html
+│   ├── register.html
+│   ├── verify_email.html
+│   ├── verify_sms.html
+│   └── dashboard.html
 │
-
-├── database/          # Archivos relacionados a la BD (schema.sql, portal.db)
-
+├── database/
+│   └── (opcional, pero como nose guardaron scripts o backups se dejo vacio)
 │
-
 ├── docs/
+├── requirements.txt
+├── .env              
+└── README.md
 
-│   └── diagramas/     # Diagramas de arquitectura, flujo MFA, modelo de BD
+Requisitos previos
 
-│
+- Python 3.x
 
-└── tests/             # Pruebas unitarias
+- PostgreSQL instalado (y pgAdmin)
 
+- Cuenta Gmail con App Password habilitada (para SMTP)
 
+- Cuenta Twilio (Trial funciona, pero requiere:
 
-Requisitos previos:
+ - número verificado
 
+ - geo permissions habilitadas
 
+ - formato E.164 para teléfonos)
 
-Python 3.x instalado
-
-pip (gestor de paquetes de Python)
-
-(Opcional pero recomendado) Entorno virtual: venv
-
-
-
-Configuración del entorno:
-
-
-
-Clonar el repositorio
-
+1, clonar repositorio:
 git clone https://github.com/cesarzinho/portal-academico-mfa.git
-
 cd portal-academico-mfa
 
-Crear y activar un entorno virtual (opcional)
-
+2, creamos y activamos el entorno virtual
 python -m venv venv
+venv\Scripts\activate
 
-En Windows:
-
-
-
-venv\\Scripts\\activate
-
-
-
-Instalar dependencias:
-
-
-
-Cuando exista el archivo requirements.txt:
-
+3, deependencias
 pip install -r requirements.txt
 
+4, creamos la database por ejemplo llamada portal_mfa
+ejecutamos el script ubicado en database/portalDataBase
+
+5, creamos el .env:
+por ejemplo, asi:
+# App
+FLASK_SECRET_KEY=una_clave_larga
+DATABASE_URL=postgresql://postgres:TU_CLAVE@localhost:5432/portal_mfa
+
+# Email SMTP (Gmail)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=tu_correo@gmail.com
+SMTP_PASS=tu_app_password_sin_espacios
+
+# Twilio SMS
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_FROM_NUMBER=+1867xxxxxxx
+
+6, ejecutamos:
+python -m flask --app src/app.py run
 
 
-Variables de entorno:
+Flujo MFA (cómo funciona)
+
+1. Usuario ingresa usuario + contraseña, o se registra con la informacion pertinente
+
+2. Si es correcto → se crea un login_flow en estado PENDING_EMAIL
+
+3. Se genera OTP email, se guarda como hash en otp_challenges y se envía por SMTP
+
+4. Usuario verifica email → pasa a PENDING_SMS
+
+6. Se genera OTP SMS y se envía por Twilio
+
+7. Usuario verifica SMS → flujo queda AUTHENTICATED y entra al home/dashboard
+
+8. Si hay demasiados intentos se bloquea el challenge y se solicita iniciar sesión de nuevo
 
 
+Componentes principales
 
-Las variables de entorno se gestionan a través de un archivo .env en la raíz
+src/auth.py: rutas de login/registro/verificación y reenvío
 
-del proyecto (no debe versionarse en Git).
+src/services/otp_service.py: generación y validación OTP (hash, expiración, intentos)
 
+src/services/email_service.py: envío OTP por correo (HTML)
 
+src/services/sms_service.py: envío OTP por SMS (Twilio)
 
-Flujo de autenticación y MFA (visión general)
+Seguridad implementada
 
+OTP con expiración (TTL)
 
+OTP guardado como hash, no texto plano
 
-1. El usuario ingresa sus credenciales (usuario y contraseña).
+Límite de intentos (max_attempts)
 
+Reenvío de códigos (email y SMS)
 
+Validación y normalización de números telefónicos
 
-2\. El sistema valida las credenciales.
+Troubleshooting
 
+Gmail: usa App Password, no tu contraseña normal
 
+Twilio Trial:
 
-3\. Si son correctas, se genera un código OTP (por ejemplo, enviado por email).
+verifica tu número “To”
 
+habilita Geo Permissions del país
 
+usa formato E.164
 
-4\. El usuario introduce el código OTP en la pantalla de verificación.
-
-
-
-5\. Si el OTP es válido y no ha expirado, se concede acceso al sistema.
-
-
-
-Los componentes principales involucrados serán:
-
-
-
--controllers/auth\_controller.py
-
-Maneja las rutas de login, logout y verificación de OTP.
-
-
-
--services/otp\_service.py
-
-Generación, almacenamiento temporal y validación de códigos OTP.
-
-
-
--services/email\_service.py
-
-Envío de correos con el código OTP al usuario.
-
-
-
--models/usuario.py y models/sesion.py
-
-Representan los usuarios y las sesiones activas en la base de datos
-
-
-
-Base de datos
-
-
-
-La carpeta database/ contendrá:
-
-
-
-schema.sql: script de creación de tablas (usuarios, sesiones, tokens OTP, etc.).
-
-
-
-portal.db: archivo de base de datos SQLite (no versionado en Git, recomendado
-
-agregarlo a .gitignore).
 

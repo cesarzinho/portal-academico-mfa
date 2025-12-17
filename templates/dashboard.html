@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>✅ Verificación completada</h2>
+<p>Tu cuenta fue autenticada correctamente con <b>3 factores</b>:</p>
+<ul>
+  <li>Contraseña</li>
+  <li>Código por correo</li>
+  <li>Código por SMS</li>
+</ul>
+
+<div class="row">
+  <a class="btn success" href="/">Ir al inicio</a>
+  <a class="btn danger" href="/logout">Cerrar sesión</a>
+</div>
+{% endblock %}

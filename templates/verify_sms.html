@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Verificación por SMS</h2>
+<small>Te enviamos un código al teléfono. Expira en 5 minutos.</small>
+
+<form method="post" action="/verify-sms">
+  <label>Código</label>
+  <input name="code" inputmode="numeric" placeholder="123456" required>
+
+  <div class="row">
+    <button class="btn" type="submit">Verificar</button>
+  </div>
+</form>
+
+<form method="post" action="/resend-sms">
+  <div class="row">
+    <button class="btn secondary" type="submit">Reenviar código</button>
+  </div>
+</form>
+{% endblock %}

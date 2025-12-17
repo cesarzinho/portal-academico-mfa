@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% set page_class = "flip-enabled" %}
+{% block content %}
+
+
+<h2>Iniciar sesión</h2>
+
+<form class="flip-form" method="post">
+  <label>Usuario</label>
+  <input name="username" placeholder="Ej: cesar" required>
+
+  <label>Contraseña</label>
+  <input name="password" type="password" placeholder="••••••••" required>
+
+  <div class="row">
+    <button class="btn" type="submit">Entrar</button>
+    <a class="btn secondary" href="/register" style="text-align:center;line-height:38px;">Crear cuenta</a>
+  </div>
+</form>
+
+<p class="codehint">Luego te pediremos código por correo y por SMS.</p>
+
+{% endblock %}
